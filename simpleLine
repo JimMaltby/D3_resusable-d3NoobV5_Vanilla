@@ -160,6 +160,7 @@ d3.reusable.lineChart = function module() {
         line.enter()
           .append('path')
             .attr("class", "line")
+	    .attr("d", valueline);
 
     }
     //draw Axes Lables
