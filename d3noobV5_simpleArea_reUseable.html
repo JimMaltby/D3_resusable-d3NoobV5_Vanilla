@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<style> /* set the CSS */
+
+      .line {
+        fill: none;
+        stroke: steelblue;
+        stroke-width: 2px;
+      }
+      .area {
+        fill: lightsteelblue;
+      }
+      
+</style>
+<body>
+    <div class="container">
+        <div id="chart"></div>
+    </div>
+</body>
+<!-- load the d3.js library -->    	
+<script src="d3.v5.min.js"></script>
+
+<script>
+//reusable script
+d3.reusable = {};
+
+d3.reusable.lineChart = function module() {
+
+    // Attributes
+    let _data = {};
+    let svg;
+    let margin = {
+        top: 40,
+        right: 20,
+        bottom: 30,
+        left: 60
+    };
+    let width = 960;
+    let height = 700;
+    let xAxisLabel = "x Axis Label";
+    let yAxisLabel = "y Axis Label";
+    let Title = "Title"
+    let chartWidth;
+    let chartHeight;
+    let xScale;
+    let yScale;
+    let xAxis;
+    let yAxis;
+    let title;
+    let valueArea;
+    let valueLine; 
+
+    // Dispatcher object to broadcast the 'customHover' event
+    //const dispatcher = d3.dispatch('customMouseOver'); //v3 = "const dispatch"
+
+    // extractors
+    const getDate = ({date}) => date;
+    const getClose = ({close}) => close;
+
+    function exports(_selection){
+        _selection.each(function(_data){
+            data = _data;
+            chartHeight = height - margin.top - margin.bottom;
+            chartWidth = width - margin.left - margin.right;
+            valueArea = d3.area()
+                .x(({date}) => xScale(date))
+                .y0(chartHeight)
+                .y1(({close}) => yScale(close));
+            valueLine = d3.line()
+                .x(({date}) => xScale(date))
+                .y(({close}) => yScale(close));
+
+
+            buildScales();
+            buildAxes();
+            buildSVG(this);
+            drawAxes();
+            //drawBars();
+            drawArea();
+            drawLine();
+            //drawScatter();
+            drawLabel();
+            drawTitle();
+            
+        });
+    }
+
+    function buildAxes(){
+        xAxis = d3.axisBottom(xScale);			//v3 = "d3.svg.axis().scale(xScale).orient("bottom");"
+
+        yAxis = d3.axisLeft(yScale);	//v3 = "d3.svg.axis().scale(yScale).orient("left");"
+    }
+
+    function buildContainerGroups(){
+        let container = svg
+          .append('g')
+            .classed('container-group', true)
+            .attr(
+                'transform',
+                `translate(${margin.left},${margin.top})`
+            );
+
+        container
+          .append('g')
+            .classed('chart-group', true);
+        container
+          .append('g')
+            .classed('x-axis-group axis', true);
+        container
+          .append('g')
+            .classed('y-axis-group axis', true);
+        container
+          .append('g')
+            .classed('title', true);
+    }
+
+    function buildScales(){
+        xScale = d3.scaleTime()			//v3 = scale.ordinal
+            .range([0, chartWidth])			//v3 = "rangeRoundBands([0, chartWidth], 0.1)"
+            .domain(d3.extent(data, getDate));
+
+        yScale = d3.scaleLinear()	//v3 = d3.scale.linear 
+            .range([chartHeight, 0])
+            .domain([0, d3.max(data, getClose)]);
+    }
+
+    function buildSVG(container){
+        if (!svg) {
+            svg = d3.select(container)
+              .append('svg')
+                .classed('bar-chart', true);
+
+            buildContainerGroups();
+        }
+        svg
+            .attr('width', width)
+            .attr('height', height);
+    }
+
+    function drawAxes(){
+        svg.select('.x-axis-group.axis')
+            .attr('transform', `translate(0,${chartHeight})`)
+            .call(xAxis);
+
+        svg.select('.y-axis-group.axis')
+            .call(yAxis);
+    }
+
+    function drawArea(){
+        let area = svg.select('.chart-group').selectAll('.area')
+            .data([data]);
+
+        // Enter
+        area.enter()
+          .append('path')
+            .attr("class", "area")
+            //.classed('line', true)
+            //.style('stroke', "red")
+            //.style('fill', "none")
+            .attr('d', valueArea); 
+            //({frequency}) => yScale(frequency));
+			//v3 = ".on("mouseover", dispatch.customMouseOver);"	
+
+    }    
+
+    function drawLine(){
+        let line = svg.select('.chart-group').selectAll('.line')
+            .data([data]);
+
+        // Enter
+        line.enter()
+          .append('path')
+            .attr("class", "line")
+            //.classed('line', true)
+            //.style('stroke', "red")
+            //.style('fill', "none")
+            .attr('d', valueLine); 
+            //({frequency}) => yScale(frequency));
+			//v3 = ".on("mouseover", dispatch.customMouseOver);"	
+
+    }
+
+    function drawLabel(){
+        var xLabel = svg.append('g')
+            .attr('class', 'xLable')
+            .append('text')
+            .text(xAxisLabel)
+            .attr('transform', 'translate(' + [width/2, margin.top + chartHeight + margin.bottom] + ')');
+
+        var yLabel = svg.append('g')
+            .attr('class', 'yLabel')
+            .append('text')
+            .text(yAxisLabel)
+            .attr('transform', 'translate(' + [margin.left*(1/4), chartHeight/2] + ')rotate(-90)');
+    }
+    function drawTitle(){
+            svg.select('.title')
+                .attr('class', 'title')
+                .append('text')
+                .text(Title)
+                .attr('transform', 'translate(' + [chartWidth/2 - margin.left, -margin.top/2] + ')')
+                .attr('font-size', 20);
+    }
+
+    exports.height = function(_x) {
+        if (!arguments.length) {
+            return height;
+        }
+        height = _x;
+
+        return this;
+    };
+
+    exports.margin = function(_x) {
+        if (!arguments.length) {
+            return margin;
+        }
+        margin = {
+            ...margin,
+            ..._x
+        };
+
+        return this;
+    };
+
+    exports.width = function(_x) {
+        if (!arguments.length) {
+            return width;
+        }
+        width = _x;
+
+        return this;
+    };
+
+    exports.xAxisLabel = function(_x) {
+        if (!arguments.length) {
+            return xAxisLabel;
+        }
+        xAxisLabel = _x;
+
+        return this;
+    };
+
+    exports.yAxisLabel = function(_x) {
+        if (!arguments.length) {
+            return yAxisLabel;
+        }
+        yAxisLabel = _x;
+
+        return this;
+    };
+
+    exports.Title = function(_x) {
+        if (!arguments.length) {
+            return Title;
+        }
+        Title = _x;
+
+        return this;
+    };
+
+    return exports;
+};
+</script>
+
+<script>
+// Usage
+/////////////////////////////////
+const parseTime = d3.timeParse("%d-%b-%y");
+
+d3.csv("data.csv").then(function(_dataCsv) {
+      // format the data
+  _dataCsv.forEach(function(d) {
+      d.date = parseTime(d.date);
+      d.close = +d.close;
+  }) //;
+
+console.log(_dataCsv)
+
+	    let lineChart = d3.reusable.lineChart()
+				.width(960)
+				.height(500)
+				.margin({
+                        top: 40,
+                        right: 20,
+        				left: 70,
+        				bottom: 50
+    				})
+                .Title ("Value vs Date Graph")
+                .xAxisLabel ("Date")
+                .yAxisLabel ("Value");
+
+	    d3.select("#chart")
+	        .datum(_dataCsv)
+	        .call(lineChart);
+	})
+	.catch((error) => {
+		throw error;
+	});
+//});
+</script>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>d3NoobV5 Reusable Examples - Tree Diagram v1 - vertical</title>
+<style> /* set the CSS */
+    
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 3px;
+}
+
+.node text { font: 12px sans-serif; }
+
+.node--internal text {
+  text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 2px;
+}
+
+</style>
+
+<body>
+    <div class="container">
+        <div id="chart"></div>
+    </div>
+</body>
+
+<!-- load the d3.js library -->    	
+<script src="d3.v5.min.js"></script>
+<script>
+	
+d3.reusable = {};
+
+d3.reusable.treeChart = function module() {
+
+    // Attributes
+    let _data = {};
+    let svg;
+    let margin = {
+        top: 40,
+        right: 20,
+        bottom: 30,
+        left: 60
+    };
+    let width = 960;
+    let height = 700;
+    let Title = "Title"
+    let chartWidth;
+    let chartHeight;
+
+
+    // extractors
+ 
+    // bring the core vis components together
+    /////////////////////////////////////////
+    function exports(_selection){
+        _selection.each(function(_data){
+            treeData = _data; // data normally
+            
+            //margin convention
+            chartHeight = height - margin.top - margin.bottom;
+            chartWidth = width - margin.left - margin.right;
+
+            buildLayout();
+            buildShape()
+            buildSVG(this);
+            drawTree();
+            drawTitle();
+            
+            console.log(treeData);
+
+        });
+    }
+
+    //build vis components
+    ////////////////////////
+
+    //build Layout
+    function buildLayout(){
+        treemap = d3.tree()
+        .size([chartHeight , chartWidth - margin.right - (margin.left*2)]); //**Change for horizontal
+        // .size([width, height]); //this is how done in d3Noob e.g. but using different implementation here.
+    }
+
+    //build Shape
+    function buildShape(){
+                nodes = d3.hierarchy(treeData);
+        
+        nodes = treemap(nodes);
+        console.log(nodes)
+    }
+
+    //build svg container for the visualisation compoenets to hang off
+    function buildContainerGroups(){
+        let container = svg
+            .append('g')
+            .classed('container-group', true)
+            .attr(
+                'transform',
+                `translate(${margin.left},${margin.top})`
+            );
+
+        container
+            .append('g')
+            .classed('chart-group', true)                								 .attr(
+                'transform',
+                `translate(${0},${margin.top})`
+            ); // added transform to centre and bring down
+        container
+            .append('g')
+            .classed('title', true);
+    }
+
+    //build SVG
+    function buildSVG(container){
+        if (!svg) {
+            svg = d3.select(container)
+                .append('svg')
+                .classed('chart', true);
+
+            buildContainerGroups();
+        }
+        svg
+            .attr('width', width)
+            .attr('height', height);
+    }
+
+    //drawing vis components
+    ////////////////////////
+    
+    //draw tree 🌲
+    function drawTree(){
+
+        // adds the links between the nodes
+        let link = svg.select('.chart-group')
+                            .selectAll(".link")
+                                    .data( nodes.descendants().slice(1))
+                                    .enter().append("path")
+                                    .attr("class", "link")
+                                    .attr("d", function(d) {
+                                        return "M" + d.y + ","
+                                         + d.x + "C" + (d.y + d.parent.y) / 2 + "," 
+                                         + d.x + " " + (d.y + d.parent.y) / 2 + "," 
+                                         +  d.parent.x + " " + d.parent.y + "," + d.parent.x ;
+                                         //**change for horizontal orientation
+                        });
+        
+        // adds each node as a group
+        let node = svg.select('.chart-group')
+                            .selectAll(".node")
+                                        .data(nodes.descendants())
+                                            .enter().append("g")
+                    .attr("class", function(d) { 
+                        return "node" + 
+                        (d.children ? " node--internal" : " node--leaf"); })
+                    .attr("transform", function(d) { 
+                        return "translate(" + d.y + "," + d.x + ")";
+                    });
+                        //**change for horizontal orientation 
+        
+        // adds the circle to the node
+        node.append("circle")
+        .attr("r", 10);
+
+        // adds the text to the node
+        node.append("text")
+        .attr("dy", ".35em")
+        //**change for horizontal orientation 
+        .attr("x", function(d) { return d.children ? -20 : 20; })
+        .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
+        //** 
+        .text(function(d) { return d.data.name; });
+        
+    }
+    //draw Title
+    function drawTitle(){
+            svg.select('.title')
+                .attr('class', 'title')
+                .append('text')
+                .text(Title)
+                .attr('transform', 'translate(' + [chartWidth/2 - margin.left, -margin.top/2] + ')')
+                .attr('font-size', 20);
+    }
+
+    //Accessors
+    ///////////
+    exports.height = function(_x) {
+        if (!arguments.length) {
+            return height;
+        }
+        height = _x;
+
+        return this;
+    };
+
+    exports.margin = function(_x) {
+        if (!arguments.length) {
+            return margin;
+        }
+        margin = {
+            ...margin,
+            ..._x
+        };
+
+        return this;
+    };
+
+    exports.width = function(_x) {
+        if (!arguments.length) {
+            return width;
+        }
+        width = _x;
+
+        return this;
+    };
+
+    exports.Title = function(_x) {
+        if (!arguments.length) {
+            return Title;
+        }
+        Title = _x;
+
+        return this;
+    };
+
+    exports.xValue = function(_x) {
+        if (!arguments.length) {
+            return xValue;
+        }
+        xValue = {
+            ...xValue,
+            ..._x
+        };
+
+        return this;
+    };
+
+    exports.yValue = function(_x) {
+        if (!arguments.length) {
+            return yValue;
+        }
+        yValue = {
+            ...yValue,
+            ..._x
+        };
+
+        return this;
+    };
+
+    return exports;
+};
+
+    // Usage
+    /////////////////////////////////
+
+d3.csv('sales.csv').then(function(_dataCsv) {		//
+    
+    const _treeData = 
+        {
+        "name": "Top Level",
+        "children": [
+            { 
+        "name": "Level 2: A",
+            "children": [
+                { "name": "Son of A" },
+                { "name": "Daughter of A" }
+            ]
+            },
+            { "name": "Level 2: B" }
+        ]
+        };
+                                
+    let Chart = d3.reusable.treeChart()
+            .width(window.innerWidth)		//fits width to window
+            .height(window.innerHeight)	//fits height to window
+            .margin({
+                        top: 30,
+                        right: 60,
+                        bottom: 20,
+                        left: 80                        
+                        })
+            .Title ("Simple Tree Diagram - horizontal");
+
+    d3.select("#chart")
+        .datum(_treeData)
+        .call(Chart);
+    })
+    .catch((error) => {
+    throw error;
+    });
+    </script>
+</html>
