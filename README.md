@@ -12,3 +12,4 @@ Addtional help from and aknowledgement to:
 - Mastering D3.js by Castillo Pablo Navarro. https://www.packtpub.com/web-development/mastering-d3js
 - Data Visualization with D3.js Cookbook by Nick Qi Zhu https://www.packtpub.com/product/data-visualization-with-d3-js-cookbook/9781782162162
 - Developing A D3.js Edge - Constructing reusable D3 components and charts by Chris Viau Andrew Thornton Ger Hobbelt,Roland Dunn https://www.wileyindia.com/developing-a-d3-js-edge-constructing-reusable-d3-components-and-charts.html.
+- Towards Updatable D3.js Charts by Rob Moore. https://www.toptal.com/d3-js/towards-reusable-d3-js-charts
